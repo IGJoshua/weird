@@ -171,6 +171,19 @@
                          target-port])
                       (remove (comp #{idx} second) inputs))))))
 
+(defn add-output
+  "Appends a new output to the `circuit`."
+  [circuit source-chip source-port]
+  (update circuit :outputs conj [source-chip source-port]))
+
+(defn remove-output
+  "Removes the output at the given index."
+  [circuit idx]
+  (update circuit :outputs
+          (fn [outputs]
+            (let [[start end] (split-at idx outputs)]
+              (vec (concat start (rest end)))))))
+
 (defrecord Delay [chip ticks stored-inputs]
   proto/Chip
   (stable? [_ new-inputs]
