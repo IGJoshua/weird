@@ -145,3 +145,21 @@
   ([chip ticks] (make-delay chip ticks nil))
   ([chip ticks inputs]
    (->Delay chip ticks (into (PersistentQueue/EMPTY) inputs))))
+
+(defrecord AcceleratedChip [chip ticks]
+  proto/Chip
+  (stable? [_ new-inputs]
+    (proto/stable? chip new-inputs))
+  (step [this new-inputs]
+    (update this :chip (partial reduce proto/step) (repeat ticks new-inputs)))
+  (output [_]
+    (proto/output chip))
+  (num-inputs [_]
+    (proto/num-inputs chip))
+  (num-outputs [_]
+    (proto/num-outputs chip)))
+
+(defn accelerate-chip
+  "Returns a modified version of `chip` that simulates a number of `ticks` per step."
+  [chip ticks]
+  (->AcceleratedChip chip ticks))
