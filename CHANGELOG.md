@@ -3,4 +3,4 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/IGJoshua/weird/compare/...HEAD
+[Unreleased]: https://github.com/IGJoshua/weird/compare/8b51e9f6b957d9b41e05c9cbf87c306eaa8c5e75...HEAD
