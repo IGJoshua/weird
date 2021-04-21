@@ -74,3 +74,47 @@
   ([num-in init-out]
    (functional-chip (comp vector not (partial every? true?))
                     num-in 1 [init-out])))
+
+(defn- calculate-chip-inputs
+  "Constructs a map from chip keys to input vectors for simulating a step."
+  [circuit new-inputs]
+  (reduce-kv
+   (fn [m k v]
+     (assoc m k (map :value (sort-by :index v))))
+   {}
+   (group-by :input
+             (concat (for [[[out-chip out-port] [in-chip in-port]] (:connections circuit)]
+                       {:input in-chip
+                        :value (nth (proto/output (get (:chips circuit) out-chip)) out-port)
+                        :index in-port})
+                     (for [[in-chip out-port in-port] (:inputs circuit)]
+                       {:input in-chip
+                        :value (nth new-inputs out-port)
+                        :index in-port})))))
+
+(defrecord Circuit [chips connections inputs outputs stored-output]
+  proto/Chip
+  (stable? [this new-inputs]
+    (let [chip-inputs (calculate-chip-inputs this new-inputs)]
+      (every? #(proto/stable? (val %) (get chip-inputs (key %))) chips)))
+  (step [this new-inputs]
+    (let [chip-inputs (calculate-chip-inputs this new-inputs)
+          new-chips (reduce-kv
+                     (fn [m k v]
+                       (assoc m k (if (proto/stable? v (get chip-inputs k))
+                                    v
+                                    (proto/step v (get chip-inputs k)))))
+                     {}
+                     chips)
+          new-output (vec
+                      (for [[out-chip out-port] outputs]
+                        (nth (proto/output (get new-chips out-chip)) out-port)))]
+      (assoc this
+             :chips new-chips
+             :stored-output new-output)))
+  (output [_]
+    stored-output)
+  (num-inputs [_]
+    (count (set (map second inputs))))
+  (num-outputs [_]
+    (count outputs)))
