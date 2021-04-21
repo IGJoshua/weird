@@ -142,6 +142,17 @@
    :outputs
    (partial filter (comp #{key} first))))
 
+(defn connect-chips
+  "Adds a connection from the `source-chip` to the `target-chip`."
+  [circuit source-chip source-port target-chip target-port]
+  (update circuit :connections conj [[source-chip source-port] [target-chip target-port]]))
+
+(defn disconnect-chips
+  "Disconnects the port from the `source-chip` to the port in the `target-chip`."
+  [circuit source-chip source-port target-chip target-port]
+  (update circuit :connections (comp vec remove)
+          #{[[source-chip source-port] [target-chip target-port]]}))
+
 (defrecord Delay [chip ticks stored-inputs]
   proto/Chip
   (stable? [_ new-inputs]
