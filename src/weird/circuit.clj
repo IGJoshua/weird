@@ -119,6 +119,29 @@
   (num-outputs [_]
     (count outputs)))
 
+(defn add-chip
+  "Adds the `chip` into the `circuit` with the given `key` id."
+  [circuit chip key]
+  (assoc-in circuit [:chips key] chip))
+
+(defn remove-chip
+  "Removes the `chip` from the `circuit`, removing any latent connections."
+  [circuit key]
+  (update
+   (update
+    (update
+     (update circuit :chips dissoc key)
+     :inputs
+     (partial filter (comp #{key} first)))
+    :connections
+    (partial filter
+             (fn [connection]
+               (#{(get-in connection [0 0])
+                  (get-in connection [1 0])}
+                key))))
+   :outputs
+   (partial filter (comp #{key} first))))
+
 (defrecord Delay [chip ticks stored-inputs]
   proto/Chip
   (stable? [_ new-inputs]
