@@ -153,6 +153,24 @@
   (update circuit :connections (comp vec remove)
           #{[[source-chip source-port] [target-chip target-port]]}))
 
+(defn add-input
+  "Adds a new input to the `circuit`."
+  [circuit input-port target-chip target-port]
+  (update circuit :inputs conj [target-chip input-port target-port]))
+
+(defn remove-input
+  "Removes the input at the given index."
+  [circuit idx]
+  (update circuit :inputs
+          (fn [inputs]
+            (vec (map (fn [[key in-port target-port]]
+                        [key
+                         (if (> in-port idx)
+                           (dec in-port)
+                           in-port)
+                         target-port])
+                      (remove (comp #{idx} second) inputs))))))
+
 (defrecord Delay [chip ticks stored-inputs]
   proto/Chip
   (stable? [_ new-inputs]
