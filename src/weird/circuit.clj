@@ -118,3 +118,30 @@
     (count (set (map second inputs))))
   (num-outputs [_]
     (count outputs)))
+
+(defrecord Delay [chip ticks stored-inputs]
+  proto/Chip
+  (stable? [_ new-inputs]
+    (and (apply = new-inputs stored-inputs)
+         (proto/stable? chip (peek stored-inputs))))
+  (step [this new-inputs]
+    (assoc this
+           :chip (cond-> chip
+                   (>= (inc (count stored-inputs)) ticks) (proto/step (peek stored-inputs)))
+           :stored-inputs (cond-> (conj stored-inputs new-inputs)
+                            (>= (inc (count stored-inputs)) ticks) (pop))))
+  (output [_]
+    (proto/output chip))
+  (num-inputs [_]
+    (proto/num-inputs chip))
+  (num-outputs [_]
+    (proto/num-outputs chip)))
+
+(defn make-delay
+  "Returns a [[proto/Chip]] which reacts to the input after a delay.
+
+  The `inputs` should be a collection of up to `ticks` - 1 input vectors
+  representing the recent inputs."
+  ([chip ticks] (make-delay chip ticks nil))
+  ([chip ticks inputs]
+   (->Delay chip ticks (into (PersistentQueue/EMPTY) inputs))))
